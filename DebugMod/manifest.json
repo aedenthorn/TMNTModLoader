@@ -1,0 +1,6 @@
+{
+	"Name":"DebugMod",
+	"Description":"",
+	"EntryFile":"DebugMod.dll",
+	"EntryMethod":"Main"
+}

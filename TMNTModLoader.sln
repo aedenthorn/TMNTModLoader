@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32519.379
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TMNTModLoader", "TMNTModLoader\TMNTModLoader.csproj", "{52926A08-A6A9-4BD9-9302-5071BD6A483E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DebugMod", "DebugMod\DebugMod.csproj", "{138E3CA4-3B07-4609-B73D-08EE4BAC34FF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{52926A08-A6A9-4BD9-9302-5071BD6A483E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52926A08-A6A9-4BD9-9302-5071BD6A483E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52926A08-A6A9-4BD9-9302-5071BD6A483E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52926A08-A6A9-4BD9-9302-5071BD6A483E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{138E3CA4-3B07-4609-B73D-08EE4BAC34FF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{138E3CA4-3B07-4609-B73D-08EE4BAC34FF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{138E3CA4-3B07-4609-B73D-08EE4BAC34FF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{138E3CA4-3B07-4609-B73D-08EE4BAC34FF}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ECBBE1AC-7B5A-47D5-81A0-685FA0E0EC7E}
+	EndGlobalSection
+EndGlobal
