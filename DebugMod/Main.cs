@@ -1,6 +1,7 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Newtonsoft.Json;
 using Paris.Engine;
 using Paris.Engine.Scene;
 using Paris.Engine.System;
@@ -11,22 +12,41 @@ using Paris.Game.System;
 using Paris.System.Input;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
 using TMNTModLoader;
 
 namespace DebugMod
 {
     public class ModEntry
     {
-
+        public static ModConfig config;
         private void Main(ModHelper helper)
         {
-
+            LoadConfig();
             var h = new Harmony("DebugMod");
             h.PatchAll();
             Console.WriteLine("Debug Mod Loaded");
-
+        }
+        public static void LoadConfig()
+        {
+            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "modconfig.json");
+            if (!File.Exists(path))
+            {
+                config = new ModConfig();
+            }
+            else
+            {
+                config = JsonConvert.DeserializeObject<ModConfig>(File.ReadAllText(path));
+            }
+            File.WriteAllText(path, JsonConvert.SerializeObject(config, Formatting.Indented));
         }
 
+        public static void SaveConfig()
+        {
+            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "modconfig.json");
+            File.WriteAllText(path, JsonConvert.SerializeObject(config, Formatting.Indented));
+        }
 
         [HarmonyPatch(typeof(DamageInfoEx), nameof(DamageInfoEx.GetDamage))]
         static class DamageInfoEx_GetDamage_Patch
@@ -72,7 +92,7 @@ namespace DebugMod
         {
             public static void Prefix(KeyboardState ___keyboardState)
             {
-                if (___keyboardState.IsKeyDown(Keys.G))
+                if (IsKeyDown(___keyboardState, config.godKey))
                 {
                     if (!godPressed)
                     {
@@ -85,7 +105,7 @@ namespace DebugMod
                 {
                     godPressed = false;
                 }
-                if (___keyboardState.IsKeyDown(Keys.N))
+                if (IsKeyDown(___keyboardState, config.ninjaKey))
                 {
                     if (!ninjaPressed)
                     {
@@ -98,61 +118,62 @@ namespace DebugMod
                 {
                     ninjaPressed = false;
                 }
-                if (___keyboardState.IsKeyDown(Keys.H))
-                {
-                    if (!healPressed)
-                    {
-                        healPressed = true;
-                        Console.WriteLine("Healing");
-                        PlayerInfo localHostPlayer = PlayerManager.Singleton.LocalHostPlayer;
-                        List<GameObject2d> players = Scene2d.Active.GetGameObjectsOfType<Player>();
-                        for (int i = 0; i < players.Count; i++)
-                        {
-                            GamePlayerInfo p = (players[i] as Player).GamePInfo;
-                            if (p.PlayerID != localHostPlayer.PlayerID)
-                                continue;
-                            ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).HP = ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).MaxHP;
-                        }
-                    }
-                }
-                else
-                {
-                    healPressed = false;
-                }
+
                 if(Scene2d.Active != null)
                 {
-
-                    if (___keyboardState.IsKeyDown(Keys.OemComma))
+                    bool add = ___keyboardState.IsKeyDown(Keys.RightShift);
+                    if (IsKeyDown(___keyboardState, config.healthKey))
                     {
-                        SwitchCharacter(255);
+                        if (!healPressed)
+                        {
+                            healPressed = true;
+                            Console.WriteLine("Healing");
+                            PlayerInfo localHostPlayer = PlayerManager.Singleton.LocalHostPlayer;
+                            List<GameObject2d> players = Scene2d.Active.GetGameObjectsOfType<Player>();
+                            for (int i = 0; i < players.Count; i++)
+                            {
+                                GamePlayerInfo p = (players[i] as Player).GamePInfo;
+                                if (p.PlayerID != localHostPlayer.PlayerID)
+                                    continue;
+                                ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).HP = ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).MaxHP;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        healPressed = false;
+                    }
+                    if (IsKeyDown(___keyboardState, config.switchKey))
+                    {
+                        SwitchCharacter(255, add);
                     }
                     else if (___keyboardState.IsKeyDown(Keys.D1))
                     {
-                        SwitchCharacter(0);
+                        SwitchCharacter(0, add);
                     }
                     else if (___keyboardState.IsKeyDown(Keys.D2))
                     {
-                        SwitchCharacter(1);
+                        SwitchCharacter(1, add);
                     }
                     else if (___keyboardState.IsKeyDown(Keys.D3))
                     {
-                        SwitchCharacter(2);
+                        SwitchCharacter(2, add);
                     }
                     else if (___keyboardState.IsKeyDown(Keys.D4))
                     {
-                        SwitchCharacter(3);
+                        SwitchCharacter(3, add);
                     }
                     else if (___keyboardState.IsKeyDown(Keys.D5))
                     {
-                        SwitchCharacter(4);
+                        SwitchCharacter(4, add);
                     }
                     else if (___keyboardState.IsKeyDown(Keys.D6))
                     {
-                        SwitchCharacter(5);
+                        SwitchCharacter(5, add);
                     }
                     else if (___keyboardState.IsKeyDown(Keys.D7))
                     {
-                        SwitchCharacter(6);
+                        SwitchCharacter(6, add);
                     }
                     else
                     {
@@ -161,7 +182,14 @@ namespace DebugMod
                 }
             }
 
-            private static void SwitchCharacter(byte v)
+            private static bool IsKeyDown(KeyboardState state, string name)
+            {
+                if (Enum.TryParse<Keys>(name, out Keys key))
+                    return state.IsKeyDown(key);
+                return false;
+            }
+
+            private static void SwitchCharacter(byte v, bool add = false)
             {
                 if (switchPressed)
                     return;
@@ -182,6 +210,10 @@ namespace DebugMod
                         sc++;
                         sc %= 7;
                     }
+                    else if (!config.enableNumKeys)
+                    {
+                        return;
+                    }
                     else if(sc == v)
                     {
                         Console.WriteLine($"player already using character {p.SelectedCharacter}");
@@ -191,7 +223,8 @@ namespace DebugMod
                     Console.WriteLine($"player {p.PlayerID}: {p.SelectedCharacter}");
                     ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).SelectedCharacter = sc;
                     Vector3 pos = players[i].Position;
-                    Scene2d.Active.RemovePlayer(p);
+                    if(!add)
+                        Scene2d.Active.RemovePlayer(p);
                     Scene2d.Active.SpawnPlayer(p, false, pos, true);
                 }
             }

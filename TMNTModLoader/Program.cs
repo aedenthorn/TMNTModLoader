@@ -52,7 +52,7 @@ namespace TMNTModLoader
             var mi = AccessTools.Method("Paris.Program:Main");
             if (mi != null)
             {
-                mi.Invoke(null, new object[] { new string[0] });
+                mi.Invoke(null, new object[] { new string[] { "-AllowMultiInstance" } });
                 Console.WriteLine($"Starting game...");
 
             }
@@ -60,6 +60,7 @@ namespace TMNTModLoader
             {
                 Console.WriteLine($"Unable to start game");
             }
+            Console.ReadLine();
         }
     }
 }

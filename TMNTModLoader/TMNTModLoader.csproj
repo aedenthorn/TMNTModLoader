@@ -2,7 +2,12 @@
   <PropertyGroup>
     <Version>1.0.0</Version>
     <OutputType>Exe</OutputType>
+    <TargetFramework>net452</TargetFramework>
+    <AutoGenerateBindingRedirects>False</AutoGenerateBindingRedirects>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Lib.Harmony" Version="2.2.1" />
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="0Harmony, Version=2.2.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Lib.Harmony.2.2.1\lib\net48\0Harmony.dll</HintPath>

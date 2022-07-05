@@ -1,6 +1,6 @@
 {
 	"Name":"DebugMod",
-	"Description":"",
+	"Description":"Adds some cheats back into the game",
 	"EntryFile":"DebugMod.dll",
 	"EntryMethod":"Main"
 }

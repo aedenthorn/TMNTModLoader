@@ -50,11 +50,6 @@
 
   <!-- Add game references -->
   <ItemGroup Label="Game">
-    <Reference Include="TMNTModLoader">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(GamePath)\TMNTModLoader.exe</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="TMNT">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(GamePath)\TMNT.exe</HintPath>
@@ -68,6 +63,21 @@
     <Reference Include="ParisSerializers">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(GamePath)\ParisSerializers.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NBug">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(GamePath)\NBug.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NLog">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(GamePath)\NLog.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="NewtonSoft">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>$(GamePath)\Newtonsoft.Json.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="FNA">
