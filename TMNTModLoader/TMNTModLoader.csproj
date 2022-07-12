@@ -5,14 +5,9 @@
     <TargetFramework>net452</TargetFramework>
     <AutoGenerateBindingRedirects>False</AutoGenerateBindingRedirects>
   </PropertyGroup>
+  <Import Project="$(SolutionDir)\solution_private.targets" />
+  <Import Project="$(SolutionDir)\loader.targets" />
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.2.1" />
   </ItemGroup>
-  <ItemGroup>
-    <Reference Include="0Harmony, Version=2.2.1.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Lib.Harmony.2.2.1\lib\net48\0Harmony.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-  <Import Project="$(SolutionDir)\solution_private.targets" />
-  <Import Project="$(SolutionDir)\loader.targets" />
 </Project>

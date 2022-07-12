@@ -219,7 +219,11 @@ namespace DebugMod
                         Console.WriteLine($"player already using character {p.SelectedCharacter}");
                         return;
                     }
-                    sc = v;
+                    else
+                    {
+                        sc = v;
+                    }
+
                     Console.WriteLine($"player {p.PlayerID}: {p.SelectedCharacter}");
                     ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).SelectedCharacter = sc;
                     Vector3 pos = players[i].Position;

@@ -3,6 +3,15 @@ using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Reflection;
+using Paris;
+using Paris.Engine;
+using Paris.Engine.Scene;
+using Paris.Engine.System;
+using Paris.Game.Actor;
+using Paris.Game.Damage;
+using Paris.Game.Data;
+using Paris.Game.System;
+using Paris.System.Input;
 
 namespace TMNTModLoader
 {
@@ -11,6 +20,8 @@ namespace TMNTModLoader
         public static ModHelper helper;
         static void Main(string[] args)
         {
+            var h = new Harmony("TMNTLoader");
+            h.PatchAll();
             helper = new ModHelper();
 
             var modPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Mods");
@@ -18,7 +29,6 @@ namespace TMNTModLoader
             {
                 Console.WriteLine("Mods folder not found, creating...");
                 Directory.CreateDirectory(modPath);
-                return;
             }
             foreach(var file in Directory.GetFiles(modPath,"manifest.json", SearchOption.AllDirectories))
             {
@@ -32,7 +42,7 @@ namespace TMNTModLoader
                     }
                     Console.WriteLine($"Loading {m.Name}");
                     var dllPath = Path.Combine(Path.GetDirectoryName(file), m.EntryFile);
-                    Assembly a = Assembly.LoadFile(dllPath);
+                    Assembly a = Assembly.UnsafeLoadFrom(dllPath);
                     foreach (var t in a.GetTypes())
                     {
                         var e = t.GetMethod(m.EntryMethod, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance);
@@ -61,6 +71,15 @@ namespace TMNTModLoader
                 Console.WriteLine($"Unable to start game");
             }
             Console.ReadLine();
+        }
+
+        [HarmonyPatch(typeof(DamageInfoEx), nameof(DamageInfoEx.GetDamage))]
+        static class DamageInfoEx_GetDamage_Patch
+        {
+            public static bool Prefix()
+            {
+                return true;
+            }
         }
     }
 }
