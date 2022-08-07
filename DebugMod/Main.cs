@@ -1,7 +1,6 @@
 ﻿using HarmonyLib;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
-using Newtonsoft.Json;
 using Paris.Engine;
 using Paris.Engine.Scene;
 using Paris.Engine.System;
@@ -12,40 +11,170 @@ using Paris.Game.System;
 using Paris.System.Input;
 using System;
 using System.Collections.Generic;
-using System.IO;
+using ModLoader;
+using Paris.Engine.Messaging;
+using System.Linq;
+using Paris.Game.HUD;
+using Paris.Game;
 using System.Reflection;
-using TMNTModLoader;
 
 namespace DebugMod
 {
     public class ModEntry
     {
-        public static ModConfig config;
-        private void Main(ModHelper helper)
+        public ModConfig config;
+        public IModHelper Helper;
+        public static bool god;
+        public static bool ninja;
+        public Scene2d lastClearedStage;
+
+        private void Main(IModHelper helper)
         {
-            LoadConfig();
+            Helper = helper;
+            config = helper.Config.LoadConfig<ModConfig>();
+            helper.Events.UpdateTicked += Events_UpdateTicked;
+            helper.Events.ContextSwitched += Events_ContextSwitched;
             var h = new Harmony("DebugMod");
             h.PatchAll();
-            Console.WriteLine("Debug Mod Loaded");
-        }
-        public static void LoadConfig()
-        {
-            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "modconfig.json");
-            if (!File.Exists(path))
-            {
-                config = new ModConfig();
-            }
-            else
-            {
-                config = JsonConvert.DeserializeObject<ModConfig>(File.ReadAllText(path));
-            }
-            File.WriteAllText(path, JsonConvert.SerializeObject(config, Formatting.Indented));
         }
 
-        public static void SaveConfig()
+        private void Events_ContextSwitched(object sender, ModLoader.Events.ContextSwitchedEventArgs e)
         {
-            string path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "modconfig.json");
-            File.WriteAllText(path, JsonConvert.SerializeObject(config, Formatting.Indented));
+            lastClearedStage = null;
+        }
+
+        private bool TryParseKey(string name, out Keys key) => Enum.TryParse<Keys>(name, out key);
+
+        private void Events_UpdateTicked(object sender, ModLoader.Events.UpdateTickEventArgs e)
+        {
+            if (TryParseKey(config.godKey, out Keys godKey) && InputManager.Singleton.IsKeyJustPressed(godKey))
+            {
+                god = !god;
+                Helper.Console.Announcement($"God mode: {god}");
+            }
+
+            if (TryParseKey(config.ninjaKey, out Keys ninjaKey) && InputManager.Singleton.IsKeyJustPressed(ninjaKey))
+            {
+                ninja = !ninja;
+                Helper.Console.Announcement($"Ninja mode: {ninja}");
+            }
+
+            if (Scene2d.Active != null)
+            {
+                if (TryParseKey(config.winKey, out Keys winKey) && InputManager.Singleton.IsKeyJustPressed(winKey))
+                    ClearStage();
+
+                if (TryParseKey(config.killKey, out Keys killKey) && InputManager.Singleton.IsKeyJustPressed(killKey))
+                    KillAllEnemies();
+
+                if (TryParseKey(config.whirlKey, out Keys whirlKey) && InputManager.Singleton.IsKeyJustPressed(whirlKey))
+                {
+                    Helper.Console.Announcement("Whirwind");
+                    ApplyPlayerCheat((g,p) => p.AddStatusEffect(Player.StatusEffectTypes.Whirlwind, config.whirlwindDuration));
+                }
+
+                if (TryParseKey(config.lifeKey, out Keys lifeKey) && InputManager.Singleton.IsKeyJustPressed(lifeKey))
+                {
+                    Helper.Console.Announcement("Lifes + 1");
+                    ApplyPlayerCheat((g,p) => g.Lives++);
+                }
+
+                if (TryParseKey(config.healthKey, out Keys healthKey) && InputManager.Singleton.IsKeyJustPressed(healthKey))
+                {
+                    Helper.Console.Announcement("Healing");
+                    ApplyPlayerCheat((g, p) => g.HP = g.MaxHP);
+                }
+
+                bool add = InputManager.Singleton.IsKeyPressed(Keys.RightShift);
+                if (TryParseKey(config.switchKey, out Keys switchKey) && InputManager.Singleton.IsKeyJustPressed(switchKey))
+                    SwitchCharacter(255, add);
+                else if (InputManager.Singleton.IsKeyJustPressed(Keys.D1))
+                    SwitchCharacter(0, add);
+                else if (InputManager.Singleton.IsKeyJustPressed(Keys.D2))
+                    SwitchCharacter(1, add);
+                else if (InputManager.Singleton.IsKeyJustPressed(Keys.D3))
+                    SwitchCharacter(2, add);
+                else if (InputManager.Singleton.IsKeyJustPressed(Keys.D4))
+                    SwitchCharacter(3, add);
+                else if (InputManager.Singleton.IsKeyJustPressed(Keys.D5))
+                    SwitchCharacter(4, add);
+                else if (InputManager.Singleton.IsKeyJustPressed(Keys.D6))
+                    SwitchCharacter(5, add);
+                else if (InputManager.Singleton.IsKeyJustPressed(Keys.D7))
+                    SwitchCharacter(6, add);
+            }
+        }
+
+        private void ApplyPlayerCheat(Action<GamePlayerInfo, Player> cheat)
+        {
+            PlayerInfo localHostPlayer = PlayerManager.Singleton.LocalHostPlayer;
+            List<GameObject2d> players = Scene2d.Active.GetGameObjectsOfType<Player>();
+            for (int i = 0; i < players.Count; i++)
+            {
+                GamePlayerInfo p = (players[i] as Player).GamePInfo;
+                if (p.PlayerID != localHostPlayer.PlayerID)
+                    continue;
+
+                cheat(((GamePlayerInfo)PlayerManager.Singleton.Players[i]), players[i] as Player);
+            }
+        }
+
+        private void SwitchCharacter(byte v, bool add = false)
+        {
+            Helper.Console.Announcement($"switching characters");
+            PlayerInfo localHostPlayer = PlayerManager.Singleton.LocalHostPlayer;
+            List<GameObject2d> players = Scene2d.Active.GetGameObjectsOfType<Player>();
+            for (int i = 0; i < players.Count; i++)
+            {
+                GamePlayerInfo p = (players[i] as Player).GamePInfo;
+                if (p.PlayerID != localHostPlayer.PlayerID)
+                    continue;
+                byte sc = p.SelectedCharacter;
+                if (sc == 255)
+                    continue;
+                if (v == 255)
+                {
+                    sc++;
+                    sc %= 7;
+                }
+                else if (!config.enableNumKeys)
+                    return;
+                else if (sc == v)
+                {
+                    Helper.Console.Warn($"player already using character {p.SelectedCharacter}");
+                    return;
+                }
+                else
+                    sc = v;
+
+                Helper.Console.Info($"player {p.PlayerID}: {p.SelectedCharacter}");
+                ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).SelectedCharacter = sc;
+                Vector3 pos = players[i].Position;
+                if (!add)
+                    Scene2d.Active.RemovePlayer(p);
+                Scene2d.Active.SpawnPlayer(p, false, pos, true);
+            }
+        }
+
+        private void ClearStage()
+        {
+            if (Scene2d.Active != null && Scene2d.Active != lastClearedStage && Scene2d.Active.Players != null && Scene2d.Active.Players.Keys.Where(p => p.IsLocalPlayer).First() is PlayerInfo playerInfo && Scene2d.Active.Players[playerInfo] is ParisObject player)
+            {
+                MessageSystem.Singleton.SendMessage(player, 66, GameInfo.Singleton.CreateLevelCompleteInfo(), true, true);
+                (Scene2d.Active.HUD as MainHUD).ShowCompletionHUD();
+
+                Helper.Console.Announcement($"Clearing Stage");
+                lastClearedStage = Scene2d.Active;
+            }
+        }
+
+        private void KillAllEnemies()
+        {
+            Helper.Console.Announcement($"Killing");
+
+            if (Scene2d.Active != null)
+                foreach (Enemy enemy in Scene2d.Active.GetGameObjectsOfType<Enemy>().Where(enemy => enemy.Active && enemy.IsVisibleOnScreen).ToList())
+                    enemy.Kill();
         }
 
         [HarmonyPatch(typeof(DamageInfoEx), nameof(DamageInfoEx.GetDamage))]
@@ -77,161 +206,5 @@ namespace DebugMod
             }
         }
 
-        public static bool god;
-        public static bool godPressed;
-
-        public static bool ninja;
-        public static bool ninjaPressed;
-
-        public static bool switchPressed;
-
-        public static bool healPressed;
-
-        [HarmonyPatch(typeof(InputManagerBase), "Tick")]
-        static class InputManager_Tick_Patch
-        {
-            public static void Prefix(KeyboardState ___keyboardState)
-            {
-                if (IsKeyDown(___keyboardState, config.godKey))
-                {
-                    if (!godPressed)
-                    {
-                        godPressed = true;
-                        god = !god;
-                        Console.WriteLine($"God mode: {god}");
-                    }
-                }
-                else
-                {
-                    godPressed = false;
-                }
-                if (IsKeyDown(___keyboardState, config.ninjaKey))
-                {
-                    if (!ninjaPressed)
-                    {
-                        ninjaPressed = true;
-                        ninja = !ninja;
-                        Console.WriteLine($"Ninja mode: {ninja}");
-                    }
-                }
-                else
-                {
-                    ninjaPressed = false;
-                }
-
-                if(Scene2d.Active != null)
-                {
-                    bool add = ___keyboardState.IsKeyDown(Keys.RightShift);
-                    if (IsKeyDown(___keyboardState, config.healthKey))
-                    {
-                        if (!healPressed)
-                        {
-                            healPressed = true;
-                            Console.WriteLine("Healing");
-                            PlayerInfo localHostPlayer = PlayerManager.Singleton.LocalHostPlayer;
-                            List<GameObject2d> players = Scene2d.Active.GetGameObjectsOfType<Player>();
-                            for (int i = 0; i < players.Count; i++)
-                            {
-                                GamePlayerInfo p = (players[i] as Player).GamePInfo;
-                                if (p.PlayerID != localHostPlayer.PlayerID)
-                                    continue;
-                                ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).HP = ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).MaxHP;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        healPressed = false;
-                    }
-                    if (IsKeyDown(___keyboardState, config.switchKey))
-                    {
-                        SwitchCharacter(255, add);
-                    }
-                    else if (___keyboardState.IsKeyDown(Keys.D1))
-                    {
-                        SwitchCharacter(0, add);
-                    }
-                    else if (___keyboardState.IsKeyDown(Keys.D2))
-                    {
-                        SwitchCharacter(1, add);
-                    }
-                    else if (___keyboardState.IsKeyDown(Keys.D3))
-                    {
-                        SwitchCharacter(2, add);
-                    }
-                    else if (___keyboardState.IsKeyDown(Keys.D4))
-                    {
-                        SwitchCharacter(3, add);
-                    }
-                    else if (___keyboardState.IsKeyDown(Keys.D5))
-                    {
-                        SwitchCharacter(4, add);
-                    }
-                    else if (___keyboardState.IsKeyDown(Keys.D6))
-                    {
-                        SwitchCharacter(5, add);
-                    }
-                    else if (___keyboardState.IsKeyDown(Keys.D7))
-                    {
-                        SwitchCharacter(6, add);
-                    }
-                    else
-                    {
-                        switchPressed = false;
-                    }
-                }
-            }
-
-            private static bool IsKeyDown(KeyboardState state, string name)
-            {
-                if (Enum.TryParse<Keys>(name, out Keys key))
-                    return state.IsKeyDown(key);
-                return false;
-            }
-
-            private static void SwitchCharacter(byte v, bool add = false)
-            {
-                if (switchPressed)
-                    return;
-                switchPressed = true;
-                Console.WriteLine($"switching characters");
-                PlayerInfo localHostPlayer = PlayerManager.Singleton.LocalHostPlayer;
-                List<GameObject2d> players = Scene2d.Active.GetGameObjectsOfType<Player>();
-                for (int i = 0; i < players.Count; i++)
-                {
-                    GamePlayerInfo p = (players[i] as Player).GamePInfo;
-                    if (p.PlayerID != localHostPlayer.PlayerID)
-                        continue;
-                    byte sc = p.SelectedCharacter;
-                    if (sc == 255)
-                        continue;
-                    if (v == 255)
-                    {
-                        sc++;
-                        sc %= 7;
-                    }
-                    else if (!config.enableNumKeys)
-                    {
-                        return;
-                    }
-                    else if(sc == v)
-                    {
-                        Console.WriteLine($"player already using character {p.SelectedCharacter}");
-                        return;
-                    }
-                    else
-                    {
-                        sc = v;
-                    }
-
-                    Console.WriteLine($"player {p.PlayerID}: {p.SelectedCharacter}");
-                    ((GamePlayerInfo)PlayerManager.Singleton.Players[i]).SelectedCharacter = sc;
-                    Vector3 pos = players[i].Position;
-                    if(!add)
-                        Scene2d.Active.RemovePlayer(p);
-                    Scene2d.Active.SpawnPlayer(p, false, pos, true);
-                }
-            }
-        }
     }
 }

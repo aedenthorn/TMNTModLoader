@@ -3,9 +3,9 @@
   <PropertyGroup>
     <AssemblyName>$(ProjectName)</AssemblyName>
     <RootNamespace>$(ProjectName)</RootNamespace>
-    <TargetFramework>net480</TargetFramework>
+    <TargetFramework>net452</TargetFramework>
     <Platforms>AnyCPU</Platforms>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -30,20 +30,20 @@
   <!-- Set start action -->
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <StartAction>Program</StartAction>
-    <StartProgram>$(GamePath)\TMNTModLoader.exe</StartProgram>
+    <StartProgram>$(GamePath)\TMNT.exe</StartProgram>
     <StartWorkingDirectory>$(GamePath)</StartWorkingDirectory>
   </PropertyGroup>
 
   <!-- Add Harmony reference -->
-  <ItemGroup Label="TMNTModLoader">
+  <ItemGroup Label="TMNTModApi">
     <Reference Include="0Harmony">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(GamePath)\0Harmony.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="TMNTModLoader">
+	<Reference Include="TMNTModApi">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(GamePath)\TMNTModLoader.exe</HintPath>
+      <HintPath>$(GamePath)\0ModApi.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
@@ -58,21 +58,6 @@
     <Reference Include="ParisEngine">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(GamePath)\ParisEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="ParisSerializers">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(GamePath)\ParisSerializers.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="NBug">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(GamePath)\NBug.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="NLog">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(GamePath)\NLog.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="NewtonSoft">
